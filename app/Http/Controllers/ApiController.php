@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Carbon\Carbon;
 
 use App\Models\CheckIn;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ function DateThai($strDate)
     $strYear = date("Y", strtotime($strDate));
     $strMonth = date("m", strtotime($strDate));
     $strDay = date("d", strtotime($strDate));
-    $strHour = date("H", strtotime($strDate)) + 7;
+    $strHour = date("H", strtotime($strDate));
     $strMinute = date("i", strtotime($strDate));
     $strSeconds = date("s", strtotime($strDate));
     return "$strYear-$strMonth-$strDay $strHour:$strMinute:$strSeconds";
@@ -168,11 +169,12 @@ class ApiController extends Controller
 
         $checkin = new CheckIn();
         $checkin->userid = $userid;
-        $checkin->date_start = DateThai(now());
+        $checkin->date_start = DateThai(Carbon::now());
         $checkin->date_end = null;
-        $checkin->status = 0;
-        $checkin->created_at = DateThai(now());
-        $checkin->updated_at = DateThai(now());
+        $checkin->date_in = Carbon::today();
+        $checkin->status = 1;
+        $checkin->created_at = DateThai(Carbon::now());
+        $checkin->updated_at = DateThai(Carbon::now());
 
         // if ($request->hasFile('image')) {
         //     $filename = $request->image->getClientOriginalName();
@@ -190,18 +192,39 @@ class ApiController extends Controller
         ]);
     }
 
+    public function postcheckout(Request $request)
+    {
+        $checkinid = $request->input('checkinid');
+
+        $checkin = CheckIn::find($checkinid);
+        $checkin->date_end =  DateThai(Carbon::now());
+        $checkin->status = 2;
+        $checkin->updated_at = DateThai(Carbon::now());
+
+        $checkin->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
     public function getcheckin()
     {
         $data = DB::table('checkin_work')
             ->select(
+                'checkinid',
                 'users.name',
                 'date_start',
                 'date_end',
                 'status'
             )
             ->join('users', 'checkin_work.userid', '=', 'users.id')
+            ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
+            ->where('checkin_work.date_in', Carbon::now()->toDateString())
             ->orderBy('checkin_work.checkinid', 'DESC')
             ->get();
+
+            // echo(Carbon::now());
 
         return response()->json($data);
     }

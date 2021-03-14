@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CheckinWorkTable extends Migration
+class StatusTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,9 @@ class CheckinWorkTable extends Migration
      */
     public function up()
     {
-        Schema::create('checkin_work', function (Blueprint $table) {
-            $table->bigIncrements('checkinid');
-            $table->integer('userid');
-            $table->dateTime('date_start');
-            $table->dateTime('date_end');
-            $table->date('date_in');
-            $table->integer('status');
+        Schema::create('statuscheckin', function (Blueprint $table) {
+            $table->bigIncrements('statusid');
+            $table->string('statusname');
             $table->timestamps();
         });
     }
@@ -31,6 +27,6 @@ class CheckinWorkTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('checkin_work');
+        Schema::dropIfExists('statuscheckin');
     }
 }

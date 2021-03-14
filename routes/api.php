@@ -27,6 +27,7 @@ Route::post('/checktoken','ApiController@checktoken');
 
 
 Route::post('/checkin','ApiController@postcheckin');
+Route::post('/checkout','ApiController@postcheckout');
 Route::get('/getcheckin','ApiController@getcheckin');
 
 

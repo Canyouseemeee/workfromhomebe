@@ -10,6 +10,6 @@ class CheckIn extends Model
     protected $table ='checkin_work';
     protected $primaryKey = 'checkinid';
     protected $fillable = [
-        'userid','date_start','date_end','status','created_at','updated_at'
+        'userid','date_start','date_end','status','date_in','created_at','updated_at'
     ];
 }
