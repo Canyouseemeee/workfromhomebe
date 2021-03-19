@@ -30,6 +30,9 @@ Route::post('/checkin','ApiController@postcheckin');
 Route::post('/checkout','ApiController@postcheckout');
 Route::get('/getcheckin','ApiController@getcheckin');
 
+Route::get('/history','ApiController@gethistorycheckin');
+Route::post('/historybetween','ApiController@gethistorybetweencheckin');
+
 
 
 

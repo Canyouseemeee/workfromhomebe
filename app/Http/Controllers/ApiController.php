@@ -166,6 +166,8 @@ class ApiController extends Controller
     public function postcheckin(Request $request)
     {
         $userid = $request->input('userid');
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
 
         $checkin = new CheckIn();
         $checkin->userid = $userid;
@@ -173,17 +175,19 @@ class ApiController extends Controller
         $checkin->date_end = null;
         $checkin->date_in = Carbon::today();
         $checkin->status = 1;
+        $checkin->latitude = $latitude;
+        $checkin->longitude = $longitude;
         $checkin->created_at = DateThai(Carbon::now());
         $checkin->updated_at = DateThai(Carbon::now());
 
-        // if ($request->hasFile('image')) {
-        //     $filename = $request->image->getClientOriginalName();
-        //     $file = time() . '.' . $filename;
-        //     $checkin->Image = $request->image->storeAs('images', $file, 'public');
-        //     // dd($file);
-        // } else {
-        //     $checkin->Image = null;
-        // }
+        if ($request->hasFile('file')) {
+            $filename = $request->file->getClientOriginalName();
+            $file = time() . '.' . $filename;
+            $checkin->file = $request->file->storeAs('files', $file, 'public');
+            // dd($file);
+        } else {
+            $checkin->file = null;
+        }
 
         $checkin->save();
 
@@ -216,11 +220,66 @@ class ApiController extends Controller
                 'users.name',
                 'date_start',
                 'date_end',
-                'status'
+                'status',
+                'file',
+                'checkin_work.latitude',
+                'checkin_work.longitude',
             )
             ->join('users', 'checkin_work.userid', '=', 'users.id')
             ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
             ->where('checkin_work.date_in', Carbon::now()->toDateString())
+            ->orderBy('checkin_work.checkinid', 'DESC')
+            ->get();
+
+            // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function gethistorycheckin()
+    {
+        $data = DB::table('checkin_work')
+            ->select(
+                'checkinid',
+                'users.name',
+                'date_start',
+                'date_end',
+                'status',
+                'file',
+                'checkin_work.latitude',
+                'checkin_work.longitude',
+            )
+            ->join('users', 'checkin_work.userid', '=', 'users.id')
+            ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
+            ->where('checkin_work.date_in', Carbon::now()->toDateString())
+            ->orderBy('checkin_work.checkinid', 'DESC')
+            ->get();
+
+            // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function gethistorybetweencheckin(Request $request)
+    {
+
+        $fromdate = $request->input('fromdate');
+        $todate = $request->input('todate');
+
+        $data = DB::table('checkin_work')
+            ->select(
+                'checkinid',
+                'users.name',
+                'date_start',
+                'date_end',
+                'status',
+                'file',
+                'checkin_work.latitude',
+                'checkin_work.longitude',
+            )
+            ->join('users', 'checkin_work.userid', '=', 'users.id')
+            ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
+            ->whereBetween('checkin_work.date_in', [$fromdate, $todate])
             ->orderBy('checkin_work.checkinid', 'DESC')
             ->get();
 

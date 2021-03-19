@@ -20,6 +20,9 @@ class CheckinWorkTable extends Migration
             $table->dateTime('date_end');
             $table->date('date_in');
             $table->integer('status');
+            $table->string('file');
+            $table->string('latitude');
+            $table->string('longitude');
             $table->timestamps();
         });
     }
