@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 
 use App\Models\CheckIn;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -212,8 +213,9 @@ class ApiController extends Controller
         ]);
     }
 
-    public function getcheckin()
+    public function getcheckin(Request $request)
     {
+        $userid = $request->input('userid');
         $data = DB::table('checkin_work')
             ->select(
                 'checkinid',
@@ -228,6 +230,7 @@ class ApiController extends Controller
             ->join('users', 'checkin_work.userid', '=', 'users.id')
             ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
             ->where('checkin_work.date_in', Carbon::now()->toDateString())
+            ->where('users.id',$userid)
             ->orderBy('checkin_work.checkinid', 'DESC')
             ->get();
 
@@ -236,8 +239,9 @@ class ApiController extends Controller
         return response()->json($data);
     }
 
-    public function gethistorycheckin()
+    public function gethistorycheckin(Request $request)
     {
+        $userid = $request->input('userid');
         $data = DB::table('checkin_work')
             ->select(
                 'checkinid',
@@ -252,6 +256,7 @@ class ApiController extends Controller
             ->join('users', 'checkin_work.userid', '=', 'users.id')
             ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
             ->where('checkin_work.date_in', Carbon::now()->toDateString())
+            ->where('users.id',$userid)
             ->orderBy('checkin_work.checkinid', 'DESC')
             ->get();
 
@@ -262,7 +267,7 @@ class ApiController extends Controller
 
     public function gethistorybetweencheckin(Request $request)
     {
-
+        $userid = $request->input('userid');
         $fromdate = $request->input('fromdate');
         $todate = $request->input('todate');
 
@@ -280,6 +285,7 @@ class ApiController extends Controller
             ->join('users', 'checkin_work.userid', '=', 'users.id')
             ->join('statuscheckin', 'checkin_work.status', '=', 'statuscheckin.statusid')
             ->whereBetween('checkin_work.date_in', [$fromdate, $todate])
+            ->where('users.id',$userid)
             ->orderBy('checkin_work.checkinid', 'DESC')
             ->get();
 
@@ -287,4 +293,238 @@ class ApiController extends Controller
 
         return response()->json($data);
     }
+
+    public function posttask(Request $request)
+    {
+        $userid = $request->input('userid');
+        $subject = $request->input('subject');
+        $description = $request->input('description');
+        $assignment = $request->input('assignment');
+        $duedate = $request->input('duedate');
+        $departmentid = $request->input('departmentid');
+
+        $task = new Task();
+        $task->createtask = $userid;
+        $task->subject = $subject;
+        $task->description = $description;
+        $task->statustask = 1;
+        $task->departmentid = $departmentid;
+        $task->assignment = $assignment;
+        $task->assign_date = DateThai(Carbon::now());
+        $task->due_date = $duedate;
+        $task->created_at = DateThai(Carbon::now());
+        $task->updated_at = DateThai(Carbon::now());
+
+        if ($request->hasFile('file')) {
+            $filename = $request->file->getClientOriginalName();
+            $file = time() . '.' . $filename;
+            $task->file = $request->file->storeAs('files', $file, 'public');
+            // dd($file);
+        } else {
+            $task->file = null;
+        }
+
+        $task->save();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function postsubmittask(Request $request)
+    {
+        $userid = $request->input('userid');
+        $taskid = $request->input('taskid');
+
+        $task = Task::find($taskid);
+        $task->statustask = 3;
+        $task->updated_at = DateThai(Carbon::now());
+
+        if ($request->hasFile('file')) {
+            $filename = $request->file->getClientOriginalName();
+            $file = time() . '.' . $filename;
+            $task->file = $request->file->storeAs('files', $file, 'public');
+            // dd($file);
+        } else {
+            $task->file = null;
+        }
+
+        $task->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function updatetask(Request $request)
+    {
+        $taskid = $request->input('taskid');
+        $userid = $request->input('userid');
+        $subject = $request->input('subject');
+        $description = $request->input('description');
+        $assignment = $request->input('assignment');
+        $duedate = $request->input('duedate');
+        $departmentid = $request->input('departmentid');
+
+        $task = Task::find($taskid);
+        $task->createtask = $userid;
+        $task->subject = $subject;
+        $task->description = $description;
+        // $task->statustask = 1;
+        $task->departmentid = $departmentid;
+        $task->assignment = $assignment;
+        // $task->assign_date = DateThai(Carbon::now());
+        $task->due_date = $duedate;
+        // $task->created_at = DateThai(Carbon::now());
+        $task->updated_at = DateThai(Carbon::now());
+
+        if ($request->hasFile('file')) {
+            $filename = $request->file->getClientOriginalName();
+            $file = time() . '.' . $filename;
+            $task->file = $request->file->storeAs('files', $file, 'public');
+            // dd($file);
+        } else {
+            $task->file = null;
+        }
+
+        $task->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function gettask(Request $request)
+    {
+        $userid = $request->input('userid');
+
+        $data = DB::table('task')
+        ->select(
+            'taskid',
+            'createtask',
+            'subject',
+            'description',
+            'statustask.statustaskid',
+            'task.departmentid',
+            'departments.dmname',
+            'assignment',
+            'users.name',
+            'file',
+            'assign_date',
+            'due_date',
+        )
+        ->join('users', 'task.createtask', '=', 'users.id')
+        ->join('statustask', 'task.statustask', '=', 'statustask.statustaskid')
+        ->join('departments', 'task.departmentid', '=', 'departments.departmentid')
+        ->where('users.id',$userid)
+        ->orderBy('task.taskid', 'DESC')
+        ->get();
+
+        // echo($data->createtask);
+
+        // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function getassigntask(Request $request)
+    {
+        $userid = $request->input('userid');
+
+        $data = DB::table('task')
+        ->select(
+            'taskid',
+            'createtask',
+            'subject',
+            'description',
+            'statustask.statustaskid',
+            'task.departmentid',
+            'departments.dmname',
+            'assignment',
+            'users.name',
+            'file',
+            'assign_date',
+            'due_date',
+        )
+        ->join('users', 'task.assignment', '=', 'users.id')
+        ->join('statustask', 'task.statustask', '=', 'statustask.statustaskid')
+        ->join('departments', 'task.departmentid', '=', 'departments.departmentid')
+        ->where('task.assignment',$userid)
+        ->orderBy('task.taskid', 'DESC')
+        ->get();
+
+        // echo($data->createtask);
+
+        // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function poststatustask(Request $request)
+    {
+        $taskid = $request->input('taskid');
+
+        $task = Task::find($taskid);
+        $task->statustask = 2;
+        $task->updated_at = DateThai(Carbon::now());
+
+
+        $task->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function getdepartment()
+    {
+        $data = DB::table('departments')
+            ->select(
+                'departmentid',
+                'dmname',
+                
+            )->get();
+
+        // echo($data->createtask);
+
+        // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function getuser(Request $request)
+    {
+        $departmentid = $request->input('departmentid');
+        $data = DB::table('users')
+            ->select(
+                'id',
+                'name', 
+            )
+            ->join('departments', 'users.departmentid', '=', 'departments.departmentid')
+            ->where('departments.departmentid',$departmentid)
+            ->get();
+
+            // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function postretask(Request $request)
+    {
+        $taskid = $request->input('taskid');
+
+        $task = Task::find($taskid);
+        $task->statustask = 2;
+
+        $task->update();
+
+        // echo($data->createtask);
+
+        // echo(Carbon::now());
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+    
 }

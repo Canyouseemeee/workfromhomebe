@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class FileTable extends Migration
+class StatustaskTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,9 @@ class FileTable extends Migration
      */
     public function up()
     {
-        Schema::create('file', function (Blueprint $table) {
-            $table->bigIncrements('fileid');
-            $table->integer('groupfileid');
-            $table->string('filename');
-            $table->integer('status');
+        Schema::create('statustask', function (Blueprint $table) {
+            $table->bigIncrements('statustaskid');
+            $table->String('statustaskname');
             $table->timestamps();
         });
     }
@@ -29,6 +27,6 @@ class FileTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('file');
+        Schema::dropIfExists('statustask');
     }
 }
