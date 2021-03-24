@@ -46,6 +46,17 @@ Route::post('/poststatustask','ApiController@poststatustask');
 Route::post('/postsubmittask','ApiController@postsubmittask');
 Route::post('/postretask','ApiController@postretask');
 
+Route::post('/gethistoryassigntask','ApiController@gethistoryassigntask');
+Route::post('/gethistorybetweenassigntask','ApiController@gethistorybetweenassigntask');
+
+Route::post('/countsolvework','ApiController@countsolvework');
+Route::post('/getsolvework','ApiController@getsolvework');
+Route::post('/updatesolve','ApiController@updatesolve');
+Route::post('/postsubmitsolvework','ApiController@postsubmitsolvework');
+Route::post('/poststatussolve','ApiController@poststatussolve');
+
+Route::get('/download','ApiController@download');
+
 
 
 

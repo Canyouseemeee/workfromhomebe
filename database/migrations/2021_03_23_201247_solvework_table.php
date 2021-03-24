@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class TaskTable extends Migration
+class SolveworkTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,12 @@ class TaskTable extends Migration
      */
     public function up()
     {
-        Schema::create('task', function (Blueprint $table) {
-            $table->bigIncrements('taskid');
-            $table->integer('createtask');
+        Schema::create('solvework', function (Blueprint $table) {
+            $table->bigIncrements('solveworkid');
+            \$table->integer('taskid');
+            $table->integer('createsolvework');
             $table->String('subject');
-            $table->String('description');
-            $table->integer('statustask');
+            $table->integer('statussolvework');
             $table->integer('deparmentid');
             $table->String('assignment');
             $table->String('file');
@@ -36,6 +36,6 @@ class TaskTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('task');
+        Schema::dropIfExists('solvework');
     }
 }

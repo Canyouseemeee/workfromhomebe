@@ -5,6 +5,7 @@ use Carbon\Carbon;
 
 use App\Models\CheckIn;
 use App\Models\Task;
+use App\Models\Solvework;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -312,6 +313,7 @@ class ApiController extends Controller
         $task->assignment = $assignment;
         $task->assign_date = DateThai(Carbon::now());
         $task->due_date = $duedate;
+        $task->close_date = null;
         $task->created_at = DateThai(Carbon::now());
         $task->updated_at = DateThai(Carbon::now());
 
@@ -338,6 +340,7 @@ class ApiController extends Controller
 
         $task = Task::find($taskid);
         $task->statustask = 3;
+        $task->close_date = Carbon::today();
         $task->updated_at = DateThai(Carbon::now());
 
         if ($request->hasFile('file')) {
@@ -450,12 +453,84 @@ class ApiController extends Controller
         ->join('statustask', 'task.statustask', '=', 'statustask.statustaskid')
         ->join('departments', 'task.departmentid', '=', 'departments.departmentid')
         ->where('task.assignment',$userid)
+        ->whereIn('task.statustask',array(1,2))
         ->orderBy('task.taskid', 'DESC')
         ->get();
 
         // echo($data->createtask);
 
         // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function gethistoryassigntask(Request $request)
+    {
+        $userid = $request->input('userid');
+
+        $data = DB::table('task')
+        ->select(
+            'taskid',
+            'createtask',
+            'subject',
+            'description',
+            'statustask.statustaskid',
+            'task.departmentid',
+            'departments.dmname',
+            'assignment',
+            'users.name',
+            'file',
+            'assign_date',
+            'due_date',
+        )
+        ->join('users', 'task.assignment', '=', 'users.id')
+        ->join('statustask', 'task.statustask', '=', 'statustask.statustaskid')
+        ->join('departments', 'task.departmentid', '=', 'departments.departmentid')
+        ->where('task.assignment',$userid)
+        ->where('task.close_date', Carbon::now()->toDateString())
+        ->where('task.statustask',3)
+        ->orderBy('task.taskid', 'DESC')
+        ->get();
+
+        // echo($data->createtask);
+
+        // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function gethistorybetweenassigntask(Request $request)
+    {
+        $userid = $request->input('userid');
+        $fromdate = $request->input('fromdate');
+        $todate = $request->input('todate');
+
+    
+        $data = DB::table('task')
+        ->select(
+            'taskid',
+            'createtask',
+            'subject',
+            'description',
+            'statustask.statustaskid',
+            'task.departmentid',
+            'departments.dmname',
+            'assignment',
+            'users.name',
+            'file',
+            'assign_date',
+            'due_date',
+        )
+        ->join('users', 'task.assignment', '=', 'users.id')
+        ->join('statustask', 'task.statustask', '=', 'statustask.statustaskid')
+        ->join('departments', 'task.departmentid', '=', 'departments.departmentid')
+        ->where('task.assignment',$userid)
+        ->whereBetween('task.close_date', [$fromdate, $todate])
+        ->where('task.statustask',3)
+        ->orderBy('task.taskid', 'DESC')
+        ->get();
+
+            // echo(Carbon::now());
 
         return response()->json($data);
     }
@@ -512,11 +587,40 @@ class ApiController extends Controller
     public function postretask(Request $request)
     {
         $taskid = $request->input('taskid');
+        $userid = $request->input('userid');
+        $subject = $request->input('subject');
+        $assignment = $request->input('assignment');
+        $duedate = $request->input('duedate');
+        $departmentid = $request->input('departmentid');
+        
+        $solvework = new Solvework();
+        $solvework->taskid = $taskid;
+        $solvework->createsolvework = $userid;
+        $solvework->subject = $subject;
+        $solvework->statussolvework = 1;
+        $solvework->departmentid = $departmentid;
+        $solvework->assignment = $assignment;
+        $solvework->assign_date = DateThai(Carbon::now());
+        $solvework->due_date = $duedate;
+        $solvework->close_date = null;
+        $solvework->created_at = DateThai(Carbon::now());
+        $solvework->updated_at = DateThai(Carbon::now());
 
-        $task = Task::find($taskid);
-        $task->statustask = 2;
+        if ($request->hasFile('file')) {
+            $filename = $request->file->getClientOriginalName();
+            $file = time() . '.' . $filename;
+            $solvework->file = $request->file->storeAs('files', $file, 'public');
+            // dd($file);
+        } else {
+            $solvework->file = null;
+        }
 
-        $task->update();
+        $solvework->save();
+
+        // $task = Task::find($taskid);
+        // $task->statustask = 2;
+
+        // $task->update();
 
         // echo($data->createtask);
 
@@ -525,6 +629,121 @@ class ApiController extends Controller
         return response()->json([
             'status' => 'success'
         ]);
+    }
+
+    public function updatesolve(Request $request)
+    {
+        $solveworkid = $request->input('solveworkid');
+        $subject = $request->input('subject');
+        $duedate = $request->input('duedate');
+        
+        $solvework = Solvework::find($solveworkid);
+        $solvework->subject = $subject;
+        $solvework->due_date = $duedate;
+        $solvework->updated_at = DateThai(Carbon::now());
+
+        $solvework->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function countsolvework(Request $request){
+        $taskid = $request->input('taskid');
+        $comment = DB::table('solvework')
+            ->select('*')
+            ->join('task', 'task.taskid', '=', 'solvework.taskid')
+            ->where('solvework.taskid',$taskid)
+            ->count();
+        return response()->json($comment);
+    }
+
+    public function getsolvework(Request $request)
+    {
+        $taskid = $request->input('taskid');
+
+        $data = DB::table('solvework')
+        ->select(
+            'solveworkid',
+            'solvework.taskid',
+            'createsolvework',
+            'solvework.subject',
+            'statussolvework.statussolveworkid',
+            'solvework.departmentid',
+            'departments.dmname',
+            'solvework.assignment',
+            'users.name',
+            'solvework.file',
+            'solvework.assign_date',
+            'solvework.due_date',
+            'solvework.close_date',
+        )
+        ->join('task', 'task.taskid', '=', 'solvework.taskid')
+        ->join('users', 'solvework.createsolvework', '=', 'users.id')
+        ->join('statussolvework', 'solvework.statussolvework', '=', 'statussolvework.statussolveworkid')
+        ->join('departments', 'solvework.departmentid', '=', 'departments.departmentid')
+        ->where('solvework.taskid',$taskid)
+        ->orderBy('solvework.taskid', 'DESC')
+        ->get();
+
+        // echo($data->createtask);
+
+        // echo(Carbon::now());
+
+        return response()->json($data);
+    }
+
+    public function postsubmitsolvework(Request $request)
+    {
+        $taskid = $request->input('taskid');
+        $solveworkid = $request->input('solveworkid');
+
+        $solvework = Solvework::find($solveworkid);
+        $solvework->statussolvework = 2;
+        $solvework->close_date = Carbon::today();
+        $solvework->updated_at = DateThai(Carbon::now());
+
+        if ($request->hasFile('file')) {
+            $filename = $request->file->getClientOriginalName();
+            $file = time() . '.' . $filename;
+            $solvework->file = $request->file->storeAs('files', $file, 'public');
+            // dd($file);
+        } else {
+            $solvework->file = null;
+        }
+
+
+        $solvework->update();
+
+        // $task = Task::find($taskid);
+        // $task->statussolvework = 3;
+        // $task->updated_at = DateThai(Carbon::now());
+        // $task->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function poststatussolve(Request $request)
+    {
+        $taskid = $request->input('taskid');
+
+
+        $task = Task::find($taskid);
+        $task->statustask = 3;
+        $task->updated_at = DateThai(Carbon::now());
+        $task->update();
+
+        return response()->json([
+            'status' => 'success'
+        ]);
+    }
+
+    public function download(){
+        $path=public_path('storage/files/1616421854.04_Fun_little_kid_game2.pdf');
+        return response()->download($path);
     }
     
 }

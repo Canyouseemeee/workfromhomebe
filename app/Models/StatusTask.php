@@ -12,3 +12,4 @@ class StatusTask extends Model
     protected $fillable = [
         'statustaskid','statustaskname'
     ];
+}
